@@ -36,6 +36,10 @@ export default function Login() {
         navigate('/browse');
       }
     } catch (err) {
+      if (err.response?.data?.pendingVerification) {
+        navigate('/register', { state: { pendingEmail: err.response.data.email } });
+        return;
+      }
       setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -68,7 +72,7 @@ export default function Login() {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-2">
             <label className="block text-gray-700 font-semibold mb-2">Password</label>
             <input
               type="password"
@@ -79,6 +83,11 @@ export default function Login() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Your password"
             />
+          </div>
+          <div className="text-right mb-6">
+            <Link to="/forgot-password" className="text-blue-600 text-sm font-medium hover:underline">
+              Forgot Password?
+            </Link>
           </div>
 
           <button

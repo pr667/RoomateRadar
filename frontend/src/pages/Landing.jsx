@@ -125,7 +125,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-6 mt-20">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p>&copy; 2024 RoommateRadar. Find your perfect match.</p>
+          <p>&copy; 2026 RoommateRadar. Find your perfect match.</p>
         </div>
       </footer>
     </div>

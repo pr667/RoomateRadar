@@ -19,10 +19,15 @@ const getProfile = async (req, res) => {
 // @route   PUT /api/users/profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, bio, avatar } = req.body;
+    const { name, bio, avatar, phone } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (bio !== undefined) update.bio = bio;
+    if (avatar !== undefined) update.avatar = avatar;
+    if (phone !== undefined) update.phone = phone;
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { name, bio, avatar },
+      update,
       { new: true, runValidators: true }
     );
     res.json({ success: true, user });
