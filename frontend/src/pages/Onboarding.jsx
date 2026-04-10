@@ -16,6 +16,13 @@ export default function Onboarding() {
     name: user?.name || '',
     bio: '',
     avatar: null,
+    occupation: '',
+    lifestyle: [],
+    gender: '',
+    age: '',
+    city: '',
+    area: '',
+    phone: '',
   });
 
   // Step 2: Preferences
@@ -73,9 +80,25 @@ export default function Onboarding() {
     setPreferences((prev) => ({ ...prev, preferredLocations: locations }));
   };
 
+  const handleLifestyleToggle = (tag) => {
+    setProfile((prev) => ({
+      ...prev,
+      lifestyle: prev.lifestyle.includes(tag)
+        ? prev.lifestyle.filter((t) => t !== tag)
+        : [...prev.lifestyle, tag],
+    }));
+  };
+
   const submitStep1 = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!profile.gender) { setError('Please select your gender.'); return; }
+    if (!profile.age || profile.age < 16 || profile.age > 80) { setError('Please enter a valid age (16–80).'); return; }
+    if (!profile.city.trim()) { setError('Please enter your city.'); return; }
+    if (!profile.area.trim()) { setError('Please enter your area/locality.'); return; }
+    if (!profile.occupation) { setError('Please select your occupation.'); return; }
+    if (profile.lifestyle.length === 0) { setError('Please select at least one lifestyle tag.'); return; }
 
     try {
       setLoading(true);
@@ -92,11 +115,15 @@ export default function Onboarding() {
         avatarUrl = res.data.avatarUrl;
       }
 
-      // Update profile
+      // Stitch all profile info into bio
+      const bioPrefix = `${profile.gender}, ${profile.age} · ${profile.area}, ${profile.city} · ${profile.occupation} · ${profile.lifestyle.join(', ')}`;
+      const fullBio = profile.bio ? `${bioPrefix}\n${profile.bio}` : bioPrefix;
+
       await API.put('/users/profile', {
         name: profile.name,
-        bio: profile.bio,
+        bio: fullBio,
         avatar: avatarUrl,
+        phone: profile.phone || undefined,
       });
 
       setStep(2);
@@ -184,18 +211,160 @@ export default function Onboarding() {
               />
             </div>
 
-            {/* Bio */}
+            {/* Gender — required */}
             <div className="mb-6">
               <label className="block text-gray-700 font-semibold mb-2">
-                About You (Bio)
+                Gender <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                {['Male', 'Female', 'Non-binary', 'Prefer not to say'].map((g) => (
+                  <label
+                    key={g}
+                    className={`flex-1 text-center px-3 py-2 rounded-lg border cursor-pointer transition text-sm font-medium ${
+                      profile.gender === g
+                        ? 'border-blue-500 bg-blue-600 text-white'
+                        : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={g}
+                      checked={profile.gender === g}
+                      onChange={(e) => setProfile((prev) => ({ ...prev, gender: e.target.value }))}
+                      className="sr-only"
+                    />
+                    {g}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Age + City + Area — required */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Age <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="age"
+                  value={profile.age}
+                  onChange={handleProfileChange}
+                  min="16"
+                  max="80"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. 24"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  value={profile.city}
+                  onChange={handleProfileChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Bangalore"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Area / Locality <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="area"
+                  value={profile.area}
+                  onChange={handleProfileChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Koramangala, Indiranagar"
+                />
+              </div>
+            </div>
+
+            {/* Phone — optional */}
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">
+                Phone Number <span className="text-xs font-normal text-gray-500">— optional</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={profile.phone}
+                onChange={handleProfileChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. +91 9876543210"
+              />
+            </div>
+
+            {/* Occupation — required */}
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">
+                I am a <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {['Student', 'Working Professional', 'Freelancer', 'Researcher', 'Retired', 'Other'].map((occ) => (
+                  <label
+                    key={occ}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                      profile.occupation === occ
+                        ? 'border-blue-500 bg-blue-600 text-white'
+                        : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="occupation"
+                      value={occ}
+                      checked={profile.occupation === occ}
+                      onChange={(e) => setProfile((prev) => ({ ...prev, occupation: e.target.value }))}
+                      className="sr-only"
+                    />
+                    <span className="text-sm font-medium">{occ}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Lifestyle tags — at least one required */}
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">
+                My Lifestyle <span className="text-red-500">*</span>{' '}
+                <span className="text-xs font-normal text-gray-500">(pick all that apply)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {['Early Riser', 'Night Owl', 'Fitness Enthusiast', 'Pet Lover', 'Homebody', 'Social Butterfly', 'Minimalist', 'Foodie', 'Remote Worker', 'Music Lover'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleLifestyleToggle(tag)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                      profile.lifestyle.includes(tag)
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bio — optional */}
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">
+                About You (Bio) <span className="text-xs font-normal text-gray-500">— optional</span>
               </label>
               <textarea
                 name="bio"
                 value={profile.bio}
                 onChange={handleProfileChange}
-                rows="4"
+                rows="3"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Tell us about yourself... (hobbies, interests, etc.)"
+                placeholder="Anything else you'd like roommates to know..."
               />
             </div>
 

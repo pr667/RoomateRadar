@@ -24,6 +24,10 @@ io.on('connection', (socket) => {
     socket.join(conversationId);
   });
 
+  socket.on('leave_room', (conversationId) => {
+    socket.leave(conversationId);
+  });
+
   socket.on('disconnect', () => {
     console.log('Socket disconnected:', socket.id);
   });
@@ -37,11 +41,11 @@ app.use(morgan('dev'));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
-// Day 2+: uncomment as you build them
-// app.use('/api/listings', require('./routes/listings'));
-// app.use('/api/requests', require('./routes/requests'));
-// app.use('/api/chat', require('./routes/chat'));
-// app.use('/api/admin', require('./routes/admin'));
+app.use('/api/listings', require('./routes/listings'));
+app.use('/api/requests', require('./routes/requests'));
+app.use('/api/chat', require('./routes/chat'));
+app.use('/api/ratings', require('./routes/ratings'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.get('/', (req, res) => res.json({ message: 'RoommateRadar API running' }));
 
