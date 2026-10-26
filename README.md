@@ -86,7 +86,7 @@ Create `backend/.env` using the variables in [Environment configuration](#enviro
 npm run dev
 ```
 
-The backend listens on `http://localhost:5000` by default. Its health endpoint is `GET /api/health`.
+The backend listens on `http://localhost:5000` by default. Its root endpoint (`GET /`) returns a message confirming the API is running.
 
 ### 2. Configure and run the frontend
 
