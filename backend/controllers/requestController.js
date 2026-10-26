@@ -94,6 +94,10 @@ const respondToRequest = async (req, res) => {
       return res.status(403).json({ message: 'Not authorised to respond to this request' });
     }
 
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending requests can be updated' });
+    }
+
     request.status = status;
     await request.save();
 
@@ -136,6 +140,10 @@ const withdrawRequest = async (req, res) => {
 
     if (request.seeker.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorised to withdraw this request' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending requests can be withdrawn' });
     }
 
     request.status = 'withdrawn';

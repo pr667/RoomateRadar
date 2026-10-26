@@ -82,6 +82,11 @@ const toggleUserActive = async (req, res) => {
     user.isActive = !user.isActive;
     await user.save();
 
+    if (!user.isActive) {
+      const io = req.app.get('io');
+      io?.in(`user:${user._id}`).disconnectSockets(true);
+    }
+
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ message: err.message });

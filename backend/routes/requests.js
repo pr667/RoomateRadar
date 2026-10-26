@@ -11,10 +11,10 @@ const {
   withdrawRequest,
 } = require('../controllers/requestController');
 
-router.post('/', protect, roleCheck('seeker', 'host'), sendRequest);
-router.get('/my', protect, roleCheck('seeker', 'host'), getMyRequests);
+router.post('/', protect, roleCheck('seeker'), sendRequest);
+router.get('/my', protect, roleCheck('seeker'), getMyRequests);
 router.get('/incoming', protect, roleCheck('host'), getIncomingRequests);
 router.put('/:id', protect, roleCheck('host'), respondToRequest);
-router.delete('/:id', protect, roleCheck('seeker', 'host'), withdrawRequest);
+router.delete('/:id', protect, roleCheck('seeker'), withdrawRequest);
 
 module.exports = router;

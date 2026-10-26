@@ -71,7 +71,7 @@ export default function Browse() {
       const res = await API.get('/listings', { params });
       setListings(res.data?.listings || res.data?.data || []);
       setTotal(res.data?.total || 0);
-      setTotalPages(res.data?.totalPages || 1);
+      setTotalPages(res.data?.pages || res.data?.totalPages || 1);
     } catch {
       setError('Failed to load listings. Please try again.');
     } finally {

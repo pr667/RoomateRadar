@@ -270,8 +270,8 @@ export default function AdminDashboard() {
                               {u.createdAt ? formatDate(u.createdAt) : '—'}
                             </td>
                             <td className="py-3 px-4">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.isSuspended ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
-                                {u.isSuspended ? 'Suspended' : 'Active'}
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.isActive === false ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                                {u.isActive === false ? 'Suspended' : 'Active'}
                               </span>
                             </td>
                             <td className="py-3 px-4">
@@ -280,12 +280,12 @@ export default function AdminDashboard() {
                                   onClick={() => handleToggleUser(u._id)}
                                   disabled={actionLoading === u._id}
                                   className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
-                                    u.isSuspended
+                                    u.isActive === false
                                       ? 'bg-green-50 hover:bg-green-100 text-green-700'
                                       : 'bg-red-50 hover:bg-red-100 text-red-600'
                                   }`}
                                 >
-                                  {u.isSuspended ? 'Unsuspend' : 'Suspend'}
+                                  {u.isActive === false ? 'Unsuspend' : 'Suspend'}
                                 </button>
                               )}
                             </td>

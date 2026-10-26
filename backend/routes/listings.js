@@ -9,6 +9,7 @@ const {
   getListings,
   getListing,
   updateListing,
+  toggleListingActive,
   deleteListing,
   uploadListingPhotos,
   removeListingPhoto,
@@ -25,6 +26,7 @@ const upload = multer({
 router.get('/my', protect, roleCheck('host'), getMyListings);
 router.get('/', protect, getListings);
 router.post('/', protect, roleCheck('host'), createListing);
+router.put('/:id/toggle', protect, roleCheck('host'), toggleListingActive);
 
 // Public route – optional auth handled inside controller
 router.get('/:id', getListing);

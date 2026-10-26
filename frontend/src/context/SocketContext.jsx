@@ -12,7 +12,8 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
     const s = io(
-      import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
+      import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000',
+      { auth: { token: localStorage.getItem('token') } }
     );
     setSocket(s);
     return () => s.disconnect();

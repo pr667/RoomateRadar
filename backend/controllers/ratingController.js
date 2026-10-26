@@ -1,15 +1,34 @@
 // controllers/ratingController.js
 const Rating = require('../models/Rating');
 const User = require('../models/User');
+const Request = require('../models/Request');
+const mongoose = require('mongoose');
 
 // ── POST /api/ratings ─────────────────────────────────────────────────────────
 const createRating = async (req, res) => {
   try {
     const { rateeId, listingId, score, review, tags } = req.body;
 
+    if (!mongoose.isValidObjectId(rateeId) || !mongoose.isValidObjectId(listingId)) {
+      return res.status(400).json({ message: 'A valid ratee and listing are required' });
+    }
+
     // Prevent self-rating
     if (rateeId === req.user._id.toString()) {
       return res.status(400).json({ message: 'You cannot rate yourself' });
+    }
+
+    const acceptedInteraction = await Request.findOne({
+      listing: listingId,
+      status: 'accepted',
+      $or: [
+        { seeker: req.user._id, host: rateeId },
+        { seeker: rateeId, host: req.user._id },
+      ],
+    }).select('_id');
+
+    if (!acceptedInteraction) {
+      return res.status(403).json({ message: 'You can rate a user only after an accepted request for this listing' });
     }
 
     // Upsert: rater + ratee + listing combination must be unique

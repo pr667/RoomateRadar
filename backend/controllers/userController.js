@@ -7,7 +7,9 @@ const { Readable } = require('stream');
 // @route   GET /api/users/:id
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await User.findById(req.params.id).select(
+      'name role avatar bio preferences trustScore totalRatings isVerified isProfileComplete createdAt'
+    );
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ success: true, user });
   } catch (err) {

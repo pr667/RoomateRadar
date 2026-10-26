@@ -60,17 +60,20 @@ const getListings = async (req, res) => {
   try {
     const {
       city, area, minRent, maxRent, roomType, amenities,
-      page = 1, limit = 12,
+      sortBy = 'newest',
     } = req.query;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 12));
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     // Build filter
     const filter = { isActive: true };
 
     if (city) {
-      filter['address.city'] = { $regex: city, $options: 'i' };
+      filter['address.city'] = { $regex: escapeRegex(city), $options: 'i' };
     }
     if (area) {
-      filter['address.street'] = { $regex: area, $options: 'i' };
+      filter['address.street'] = { $regex: escapeRegex(area), $options: 'i' };
     }
     if (minRent || maxRent) {
       filter.rent = {};
@@ -85,18 +88,20 @@ const getListings = async (req, res) => {
       filter.amenities = { $all: amenityList };
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = (page - 1) * limit;
     const total = await Listing.countDocuments(filter);
-
-    let listings = await Listing.find(filter)
-      .populate('host', 'name avatar preferences trustScore')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
-    // Add compatibility scores for seekers
+    const sortOptions = {
+      'price-asc': { rent: 1, createdAt: -1 },
+      'price-desc': { rent: -1, createdAt: -1 },
+      newest: { createdAt: -1 },
+      compatibility: { createdAt: -1 },
+    };
+    const sort = sortOptions[sortBy] || sortOptions.newest;
     const isSeeker = req.user && req.user.role === 'seeker';
-    listings = listings.map((listing) => {
+    const query = Listing.find(filter).populate('host', 'name avatar preferences trustScore');
+    let listings;
+
+    const addCompatibilityScore = (listing) => {
       const obj = listing.toObject();
       if (isSeeker) {
         const seekerPrefs = req.user.preferences || {};
@@ -106,19 +111,26 @@ const getListings = async (req, res) => {
         obj.compatibilityScore = computeCompatibility(seekerPrefs, listing, hostPrefs);
       }
       return obj;
-    });
+    };
 
-    // Sort by compatibilityScore desc for seekers
-    if (isSeeker) {
-      listings.sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+    // Rank the full matching set before slicing so compatibility is consistent across pages.
+    if (isSeeker && sortBy === 'compatibility') {
+      listings = (await query.sort({ createdAt: -1 })).map(addCompatibilityScore);
+      listings.sort((a, b) =>
+        (b.compatibilityScore || 0) - (a.compatibilityScore || 0) ||
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      listings = listings.slice(skip, skip + limit);
+    } else {
+      listings = (await query.sort(sort).skip(skip).limit(limit)).map(addCompatibilityScore);
     }
 
     res.json({
       success: true,
       listings,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
+      page,
+      pages: Math.ceil(total / limit),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -201,6 +213,23 @@ const updateListing = async (req, res) => {
 
     await listing.save();
 
+    res.json({ success: true, listing });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Toggle whether a host's listing appears in browse results.
+const toggleListingActive = async (req, res) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) return res.status(404).json({ message: 'Listing not found' });
+    if (listing.host.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorised to update this listing' });
+    }
+
+    listing.isActive = !listing.isActive;
+    await listing.save();
     res.json({ success: true, listing });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -334,6 +363,7 @@ module.exports = {
   getListings,
   getListing,
   updateListing,
+  toggleListingActive,
   deleteListing,
   uploadListingPhotos,
   removeListingPhoto,
